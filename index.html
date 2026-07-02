@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>報價單產生器</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== 左側控制面板 ===== -->
+  <aside class="panel-left">
+    <h1 class="app-title">報價單產生器</h1>
+
+    <!-- 品牌設定 -->
+    <section class="card">
+      <h2>品牌設定</h2>
+      <div class="field">
+        <label>公司 Logo</label>
+        <input type="file" id="logoInput" accept="image/*">
+        <button type="button" id="logoClear" class="btn-text">移除 Logo</button>
+      </div>
+      <div class="field">
+        <label>主題顏色</label>
+        <input type="color" id="themeColor" value="#2563eb">
+      </div>
+    </section>
+
+    <!-- 報價單資訊 -->
+    <section class="card">
+      <h2>報價單資訊</h2>
+      <div class="field">
+        <label>報價單編號</label>
+        <input type="text" id="quoteNo">
+      </div>
+      <div class="field">
+        <label>報價日期</label>
+        <input type="date" id="quoteDate">
+      </div>
+      <div class="field">
+        <label>幣別</label>
+        <select id="currency">
+          <option value="TWD">TWD 新台幣</option>
+          <option value="USD">USD 美元</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- 客戶資料 -->
+    <section class="card">
+      <h2>客戶資料</h2>
+      <div class="field">
+        <label>客戶名稱 / 公司</label>
+        <input type="text" id="custName" placeholder="例：光合科技有限公司">
+      </div>
+      <div class="field">
+        <label>聯絡人</label>
+        <input type="text" id="custContact">
+      </div>
+      <div class="field">
+        <label>電話</label>
+        <input type="text" id="custPhone">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="custEmail">
+      </div>
+      <div class="field">
+        <label>地址</label>
+        <input type="text" id="custAddress">
+      </div>
+    </section>
+
+    <!-- 產品項目 -->
+    <section class="card">
+      <h2>產品項目</h2>
+      <div id="itemsList" class="items-list"></div>
+      <button type="button" id="addItem" class="btn-primary">＋ 新增產品</button>
+    </section>
+
+    <!-- 折扣 / 稅金 -->
+    <section class="card">
+      <h2>折扣與稅金</h2>
+      <div class="field">
+        <label>折扣類型</label>
+        <select id="discountType">
+          <option value="none">無折扣</option>
+          <option value="percent">百分比 (%)</option>
+          <option value="fixed">固定金額</option>
+        </select>
+      </div>
+      <div class="field" id="discountValueField" style="display:none;">
+        <label>折扣數值</label>
+        <input type="number" id="discountValue" min="0" value="0">
+      </div>
+      <div class="field">
+        <label>稅金</label>
+        <div class="toggle-group" id="taxToggle">
+          <button type="button" class="toggle-btn" data-tax="0">未稅</button>
+          <button type="button" class="toggle-btn active" data-tax="5">5%</button>
+          <button type="button" class="toggle-btn" data-tax="8">8%</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 備註 -->
+    <section class="card">
+      <h2>備註</h2>
+      <div class="field">
+        <textarea id="notes" rows="3" placeholder="付款條件、交期等備註事項"></textarea>
+      </div>
+    </section>
+
+    <!-- 操作 -->
+    <section class="card actions">
+      <button type="button" id="saveQuote" class="btn-primary">💾 儲存這筆報價</button>
+      <button type="button" id="downloadPdf" class="btn-primary">⬇ 下載 PDF</button>
+      <button type="button" id="newQuote" class="btn-text">＋ 開新報價單</button>
+    </section>
+
+    <!-- 歷史報價 -->
+    <section class="card">
+      <h2>歷史報價 <span id="historyCount" class="badge">0</span></h2>
+      <div id="historyList" class="history-list">
+        <p class="empty-hint">尚無儲存的報價單</p>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ===== 右側預覽 ===== -->
+  <main class="panel-right">
+    <div class="preview-toolbar">
+      <span>報價單預覽</span>
+    </div>
+    <div class="preview-scroll">
+      <div id="quotePreview" class="quote-sheet">
+        <header class="quote-header">
+          <div class="quote-brand">
+            <img id="previewLogo" class="preview-logo" style="display:none;">
+            <div id="previewCompanyName" class="company-name">貴公司名稱</div>
+          </div>
+          <div class="quote-meta">
+            <h2>報價單</h2>
+            <div>編號：<span id="pvQuoteNo">-</span></div>
+            <div>日期：<span id="pvQuoteDate">-</span></div>
+            <div>幣別：<span id="pvCurrency">TWD</span></div>
+          </div>
+        </header>
+
+        <section class="quote-parties">
+          <div>
+            <h3>客戶資訊</h3>
+            <div id="pvCustName" class="strong">-</div>
+            <div id="pvCustContact"></div>
+            <div id="pvCustPhone"></div>
+            <div id="pvCustEmail"></div>
+            <div id="pvCustAddress"></div>
+          </div>
+        </section>
+
+        <table class="quote-table">
+          <thead>
+            <tr>
+              <th class="col-idx">#</th>
+              <th class="col-name">品名</th>
+              <th class="col-qty">數量</th>
+              <th class="col-price">單價</th>
+              <th class="col-amount">小計</th>
+            </tr>
+          </thead>
+          <tbody id="pvItemsBody"></tbody>
+        </table>
+
+        <section class="quote-summary">
+          <div class="summary-row">
+            <span>小計</span><span id="pvSubtotal">0</span>
+          </div>
+          <div class="summary-row" id="pvDiscountRow" style="display:none;">
+            <span id="pvDiscountLabel">折扣</span><span id="pvDiscountAmount">0</span>
+          </div>
+          <div class="summary-row" id="pvTaxRow">
+            <span id="pvTaxLabel">稅金 (5%)</span><span id="pvTaxAmount">0</span>
+          </div>
+          <div class="summary-row total">
+            <span>總金額</span><span id="pvTotal">0</span>
+          </div>
+        </section>
+
+        <section class="quote-notes" id="pvNotesSection" style="display:none;">
+          <h3>備註</h3>
+          <div id="pvNotes"></div>
+        </section>
+
+        <footer class="quote-footer">感謝您的支持與惠顧</footer>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
